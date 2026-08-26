@@ -737,10 +737,44 @@ function bindCriticalButtons(){
   }
 }
 
-function saveSettings(){data.settings.appUrl=$('appUrl').value.trim();save();toast('Guardado')}function exportData(){$('backupBox').value=JSON.stringify(data,null,2);navigator.clipboard.writeText($('backupBox').value).then(()=>toast('Backup copiado'))}function importData(){try{data=Object.assign(baseData(),JSON.parse($('backupBox').value));save();bindVoiceButtons();
-renderAll();
-bindCriticalButtons();
-startReminderLoop();toast('Importado')}catch(e){toast('JSON inválido')}}
+function saveSettings(){data.settings.appUrl=$('appUrl').value.trim();save();toast('Guardado')}
+function exportData(){
+  const json=JSON.stringify(data,null,2);
+  $('backupBox').value=json;
+  const blob=new Blob([json],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download='mi-hogar-backup-'+new Date().toISOString().slice(0,10)+'.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  toast('Backup descargado');
+}
+function importData(){
+  const input=document.createElement('input');
+  input.type='file';
+  input.accept='.json,application/json';
+  input.onchange=()=>{
+    const file=input.files[0];
+    if(!file)return;
+    const reader=new FileReader();
+    reader.onload=()=>{
+      try{
+        data=Object.assign(baseData(),JSON.parse(reader.result));
+        save();
+        bindVoiceButtons();
+        renderAll();
+        bindCriticalButtons();
+        startReminderLoop();
+        toast('Importado');
+      }catch(e){toast('JSON inválido')}
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
 bindVoiceButtons();
 renderAll();
 bindCriticalButtons();
